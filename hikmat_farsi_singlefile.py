@@ -1,92 +1,107 @@
 import streamlit as st
-from datetime import datetime, timedelta
+import datetime
 import math
+from random import randint
 
-st.set_page_config(page_title="تحلیل عبری-اسلامی", layout="centered")
+st.set_page_config(page_title="خوانش ابراهیمی", layout="centered")
+st.title("🧿 خوانش ابراهیمی | تحلیل ابجد، جفر، همسر روحی")
 
-st.title("🔮 درگاه تحلیل ابجدی، قمری و قرآنی")
+st.markdown("---")
+st.markdown("لطفاً اطلاعات زیر را وارد نمایید:")
 
-with st.form("form"):
-    full_name = st.text_input("نام کامل شما")
-    mother_name = st.text_input("نام مادر شما")
-    father_name = st.text_input("نام پدر شما")
-    birth_date = st.date_input("تاریخ تولد شما", value=datetime(1980, 1, 1), min_value=datetime(1900,1,1), max_value=datetime(2100,1,1))
-    father_birth = st.date_input("تاریخ تولد پدر", value=datetime(1960, 1, 1))
-    mother_birth = st.date_input("تاریخ تولد مادر", value=datetime(1965, 1, 1))
-    children_names = st.text_area("نام فرزندان (هر نام در یک خط)")
-    children_births = st.text_area("تاریخ تولد فرزندان (مطابق ترتیب بالا - فرمت YYYY-MM-DD)")
-    submit = st.form_submit_button("🔍 تحلیل کن")
+# فرم اصلی
+with st.form("user_form"):
+    full_name = st.text_input("نام کامل شما:")
+    name_dob = st.date_input("تاریخ تولد شما:", value=datetime.date(1990, 1, 1),
+                             min_value=datetime.date.today() - datetime.timedelta(days=365*100),
+                             max_value=datetime.date.today())
 
-# دیکشنری ساده آیات قرآن
-quran_verses = {
-    1: "بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ - بنام خداوند بخشنده مهربان",
-    2: "الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ - ستایش مخصوص خداوندی است که پروردگار جهانیان است",
-    63: "وَعِبَادُ الرَّحْمَٰنِ ... - بندگان واقعی خدای رحمان کسانی هستند که با فروتنی راه می‌روند",
-    296: "وَٱصْبِرْ وَمَا صَبْرُكَ إِلَّا بِٱللَّهِ - صبر کن، و صبر تو فقط برای خداست"
-}
+    mother_name = st.text_input("نام مادر:")
+    mother_dob = st.date_input("تاریخ تولد مادر:", value=datetime.date(1960, 1, 1))
 
-# محاسبه ابجد ساده
-def abjad_value(name):
-    abjad_table = {
-        'ا':1, 'ب':2, 'ج':3, 'د':4, 'ه':5, 'و':6, 'ز':7, 'ح':8, 'ط':9, 'ی':10, 'ک':20,
-        'ل':30, 'م':40, 'ن':50, 'س':60, 'ع':70, 'ف':80, 'ص':90, 'ق':100, 'ر':200,
-        'ش':300, 'ت':400, 'ث':500, 'خ':600, 'ذ':700, 'ض':800, 'ظ':900, 'غ':1000
+    father_name = st.text_input("نام پدر:")
+    father_dob = st.date_input("تاریخ تولد پدر:", value=datetime.date(1960, 1, 1))
+
+    spouse_name = st.text_input("نام همسر:")
+    spouse_mother = st.text_input("نام مادر همسر:")
+
+    st.markdown("### 👨‍👩‍👧‍👦 فرزندان (حداکثر ۲)")
+    child_1 = st.text_input("نام فرزند اول:")
+    child_1_dob = st.date_input("تاریخ تولد فرزند اول:", value=datetime.date(2010, 1, 1))
+    child_2 = st.text_input("نام فرزند دوم:")
+    child_2_dob = st.date_input("تاریخ تولد فرزند دوم:", value=datetime.date(2012, 1, 1))
+
+    submitted = st.form_submit_button("محاسبه و تحلیل")
+
+# تابع محاسبه ابجد کبیر
+def abjad(name):
+    table = {
+        'ا':1,'ب':2,'ج':3,'د':4,'ه':5,'و':6,'ز':7,'ح':8,'ط':9,
+        'ی':10,'ک':20,'ل':30,'م':40,'ن':50,'س':60,'ع':70,'ف':80,'ص':90,
+        'ق':100,'ر':200,'ش':300,'ت':400,'ث':500,'خ':600,'ذ':700,'ض':800,
+        'ظ':900,'غ':1000,'ء':0,' ':0,'آ':1,'ة':400
     }
-    return sum([abjad_table.get(ch, 0) for ch in name if ch in abjad_table])
+    return sum([table.get(ch, 0) for ch in name])
 
-# فاز ماه ساده
-def moon_phase(date):
-    known_new_moon = datetime(2000, 1, 6)  # مرجع فاز ماه
-    days = (date - known_new_moon).days
-    lunation = 29.53058867
-    phase = days % lunation
-    if phase < 1.5:
-        return "🌑 هلال جدید"
-    elif phase < 7:
-        return "🌓 تربیع اول"
-    elif phase < 15:
-        return "🌕 ماه کامل"
-    elif phase < 22:
-        return "🌗 تربیع دوم"
-    else:
-        return "🌘 پایان ماه"
-    
-# اسم اعظم احتمالی (نمونه اولیه ساده)
-def probable_ism_azam(name_value):
-    if name_value % 9 == 0:
-        return "القهار"
-    elif name_value % 7 == 0:
-        return "اللطیف"
-    elif name_value % 5 == 0:
-        return "الرزاق"
-    elif name_value % 3 == 0:
-        return "الغفور"
-    else:
-        return "الرحمن"
+# فاز ماه
+def moon_phase(d):
+    diff = d - datetime.date(2001,1,1)
+    days = diff.days % 29.53
+    phase = round((days / 29.53) * 8)
+    phases = ['🌑 محاق', '🌒 هلال', '🌓 تربیع اول', '🌔 قرص در حال افزایش', '🌕 بدر', '🌖 قرص در حال کاهش', '🌗 تربیع دوم', '🌘 پایان ماه']
+    return phases[phase % 8]
 
-# اجرای تحلیل
-if submit:
-    st.subheader("📜 نتایج تحلیل")
+# آیه
+def get_verse(num):
+    return f"سوره ۵، آیه {num}: «کُلُّ نَفْسٍ بِمَا كَسَبَتْ رَهِينَةٌ»"
 
-    total_abjad = abjad_value(full_name) + abjad_value(mother_name)
-    st.markdown(f"🔢 ارزش ابجدی نام شما و مادرتان: **{total_abjad}**")
+# مرگ نفس
+def soul_exit(dob):
+    base = dob.year + randint(47, 63)
+    return f"📅 زمان تقریبی مرگ نفس: سال {base}"
 
-    phase = moon_phase(birth_date)
-    st.markdown(f"🌙 فاز ماه هنگام تولد: **{phase}**")
+# تحلیل همسر روحی
+def soulmate_analysis(your_name, your_mom, spouse, spouse_mom):
+    if not spouse or not spouse_mom:
+        return "🔻 اطلاعات ناقص برای تحلیل همسر روحی"
 
-    verse_number = (total_abjad % 300) or 1
-    verse = quran_verses.get(verse_number, "آیه‌ای یافت نشد.")
-    st.markdown(f"📖 شماره آیه پیشنهادی: **{verse_number}**")
-    st.markdown(f"🔊 آیه: {verse}")
+    total_you = abjad(your_name) + abjad(your_mom)
+    total_spouse = abjad(spouse) + abjad(spouse_mom)
 
-    ism = probable_ism_azam(total_abjad)
-    st.markdown(f"🕋 اسم اعظم احتمالی بر اساس تحلیل نام شما: **{ism}**")
+    diff = abs(total_you - total_spouse)
+    closeness = 100 - (diff % 100)
 
-    if children_names.strip():
-        st.markdown("👶 فرزندان:")
-        names = children_names.strip().split("\n")
-        bds = children_births.strip().split("\n")
-        for i, name in enumerate(names):
-            abv = abjad_value(name)
-            dob = bds[i] if i < len(bds) else "----"
-            st.markdown(f"- {name} ({dob}) → ابجد: **{abv}**")
+    return f"""
+    💞 تحلیل هماهنگی با همسر:
+    - مجموع ابجد شما: {total_you}
+    - مجموع ابجد همسر: {total_spouse}
+    - درصد هماهنگی روحی: {closeness}٪
+    - تفسیر: {"👫 هماهنگ و متعادل" if closeness >= 70 else "⚠️ نیازمند کار و درک بیشتر"}
+    """
+
+# اجرای تحلیل‌ها
+if submitted:
+    st.subheader("🔮 نتایج تحلیل:")
+
+    val1 = abjad(full_name)
+    val2 = abjad(mother_name)
+    total_val = val1 + val2
+
+    st.write(f"🔢 مجموع ابجد نام و مادر: {total_val}")
+    st.write(f"🌙 فاز ماه تولد شما: {moon_phase(name_dob)}")
+    st.write(get_verse(total_val % 120))
+    st.write(soul_exit(name_dob))
+
+    st.markdown("---")
+    st.subheader("🧩 تحلیل همسر روحی")
+    st.markdown(soulmate_analysis(full_name, mother_name, spouse_name, spouse_mother))
+
+    st.markdown("---")
+    st.subheader("👧 تحلیل فرزندان:")
+    if child_1:
+        st.write(f"{child_1} - ابجد: {abjad(child_1)} - فاز ماه: {moon_phase(child_1_dob)}")
+    if child_2:
+        st.write(f"{child_2} - ابجد: {abjad(child_2)} - فاز ماه: {moon_phase(child_2_dob)}")
+
+    st.markdown("---")
+    st.caption("🧿 این تحلیل صرفاً جهت الهام معنوی و شناخت شخصی است.")
