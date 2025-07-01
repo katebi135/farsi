@@ -23,8 +23,8 @@ def get_abjad_value(name):
 # ------------------------ ابزار قمر ------------------------
 def get_moon_phase(date):
     known_new_moon = datetime(2001, 1, 24)
-    days = (date - known_new_moon).days
-    phase = days % 29.53
+in get_moon_phase
+    days = (date - known_new_moon).days    phase = days % 29.53
     if phase < 1.84566:
         return "🌑 ماه نو"
     elif phase < 5.53699:
