@@ -1,86 +1,92 @@
 import streamlit as st
-import datetime
+from datetime import datetime
 
-# فرهنگ ابجد
+st.set_page_config(page_title="تحلیل ابجدی و قمری", layout="centered")
+st.title("🔮 درگاه تحلیل عرفانی")
+
+# ------------------------ ابزارهای جفر ------------------------
 abjad_dict = {
-    'ا': 1, 'ب': 2, 'ج': 3, 'د': 4, 'ه': 5, 'و': 6, 'ز': 7, 'ح': 8, 'ط': 9,
-    'ی': 10, 'ك': 20, 'ک': 20, 'ل': 30, 'م': 40, 'ن': 50, 'س': 60, 'ع': 70,
-    'ف': 80, 'ص': 90, 'ق': 100, 'ر': 200, 'ش': 300, 'ت': 400, 'ث': 500,
-    'خ': 600, 'ذ': 700, 'ض': 800, 'ظ': 900, 'غ': 1000
+    'ا': 1, 'ب': 2, 'پ': 2, 'ت': 400, 'ث': 500, 'ج': 3, 'چ': 3, 'ح': 8,
+    'خ': 600, 'د': 4, 'ذ': 700, 'ر': 200, 'ز': 7, 'ژ': 7, 'س': 60,
+    'ش': 300, 'ص': 90, 'ض': 800, 'ط': 9, 'ظ': 900, 'ع': 70, 'غ': 1000,
+    'ف': 80, 'ق': 100, 'ک': 20, 'ك': 20, 'گ': 20, 'ل': 30, 'م': 40,
+    'ن': 50, 'و': 6, 'ه': 5, 'ی': 10, 'ي': 10, 'ء': 1, 'آ': 1, 'ؤ': 6, 'ئ': 10
 }
 
-def abjad_calc(name):
-    return sum(abjad_dict.get(char, 0) for char in name if char in abjad_dict)
+def clean_text(text):
+    return ''.join(c for c in text if c in abjad_dict)
 
-def moon_phase(date):
-    base = datetime.date(2001, 1, 1)
-    days = (date - base).days
+def get_abjad_value(name):
+    name = clean_text(name)
+    return sum(abjad_dict.get(char, 0) for char in name)
+
+# ------------------------ ابزار قمر ------------------------
+def get_moon_phase(date):
+    known_new_moon = datetime(2001, 1, 24)
+    days = (date - known_new_moon).days
     phase = days % 29.53
-    if phase < 1:
+    if phase < 1.84566:
         return "🌑 ماه نو"
-    elif phase < 7:
+    elif phase < 5.53699:
+        return "🌒 هلال در حال رشد"
+    elif phase < 9.22831:
         return "🌓 تربیع اول"
-    elif phase < 15:
-        return "🌕 بدر"
-    elif phase < 22:
+    elif phase < 12.91963:
+        return "🌔 بدر در حال رشد"
+    elif phase < 16.61096:
+        return "🌕 ماه کامل"
+    elif phase < 20.30228:
+        return "🌖 بدر در حال کاهش"
+    elif phase < 23.99361:
         return "🌗 تربیع دوم"
+    elif phase < 27.68493:
+        return "🌘 هلال در حال کاهش"
     else:
-        return "🌘 ماه کهنه"
+        return "🌑 ماه نو"
 
-def get_quran_insight(value):
-    verse = (value % 6236) + 1
-    ism = (value % 99) + 1
-    return verse, ism
-
-st.set_page_config(page_title="تحلیل حکمت فَرْسی", layout="centered")
-st.title("🔮 تحلیل حکمت بر اساس حروف ابجد")
-
+# ------------------------ ورودی‌ها ------------------------
 with st.form("form"):
     name = st.text_input("نام کامل شما")
     mother = st.text_input("نام مادر شما")
     father = st.text_input("نام پدر شما")
-    spouse = st.text_input("نام همسر")
-    spouse_mother = st.text_input("نام مادر همسر")
-    
-    dob = st.date_input("تاریخ تولد شما", min_value=datetime.date(1900,1,1))
-    mother_dob = st.date_input("تاریخ تولد مادر")
-    father_dob = st.date_input("تاریخ تولد پدر")
 
-    children_names = st.text_area("نام فرزندان (هر نام در یک خط)")
-    children_dobs = st.text_area("تاریخ تولد فرزندان (هر خط مطابق بالا، YYYY-MM-DD)")
+    dob = st.date_input("تاریخ تولد شما", format="YYYY-MM-DD")
+    dob_mother = st.date_input("تاریخ تولد مادر", format="YYYY-MM-DD")
+    dob_father = st.date_input("تاریخ تولد پدر", format="YYYY-MM-DD")
 
-    submitted = st.form_submit_button("تحلیل کن")
+    child_names_raw = st.text_area("نام فرزندان (هر نام در یک خط)")
+    child_dobs_raw = st.text_area("تاریخ تولد فرزندان (مطابق ترتیب بالا، فرمت: YYYY-MM-DD)")
 
+    submitted = st.form_submit_button("🔍 تحلیل کن")
+
+# ------------------------ تحلیل و نمایش ------------------------
 if submitted:
-    name_val = abjad_calc(name)
-    mother_val = abjad_calc(mother)
-    total_val = name_val + mother_val
+    if not name or not mother:
+        st.error("لطفا نام کامل و نام مادر را وارد کنید.")
+    else:
+        name_val = get_abjad_value(name)
+        mother_val = get_abjad_value(mother)
+        abjad_total = name_val + mother_val
 
-    moon = moon_phase(dob)
-    verse, ism = get_quran_insight(total_val)
+        st.subheader("📜 نتایج تحلیل")
+        st.write(f"🔢 ارزش ابجدی نام شما و مادر: {abjad_total}")
 
-    st.markdown("## 🧮 نتایج تحلیل")
-    st.write(f"🔢 ارزش ابجدی: **{total_val}**")
-    st.write(f"🌙 فاز ماه تولد: {moon}")
-    st.write(f"📖 آیه پیشنهادی: **آیه شماره {verse}**")
-    st.write(f"🕊️ اسم اعظم احتمالی: **اسم شماره {ism}**")
+        moon = get_moon_phase(dob)
+        st.write(f"🌙 قمر ماه هنگام تولد: {moon}")
 
-    if spouse and spouse_mother:
-        s_val = abjad_calc(spouse) + abjad_calc(spouse_mother)
-        diff = abs(total_val - s_val)
-        score = 100 - min(diff, 100)
-        st.write(f"❤️ امتیاز سازگاری با همسر: **{score} از ۱۰۰**")
-
-    if children_names.strip() and children_dobs.strip():
+        # ---------------- فرزندان ----------------
         st.subheader("👶 فرزندان")
-        names = children_names.strip().split("\n")
-        dobs = children_dobs.strip().split("\n")
-        for i in range(min(len(names), len(dobs))):
+        child_names = [n.strip() for n in child_names_raw.split("\n") if n.strip()]
+        child_dobs = [d.strip() for d in child_dobs_raw.split("\n") if d.strip()]
+
+        if len(child_names) != len(child_dobs):
+            st.warning("تعداد نام فرزندان با تعداد تاریخ تولدها یکسان نیست.")
+
+        for i in range(min(len(child_names), len(child_dobs))):
             try:
-                cname = names[i].strip()
-                cdob = datetime.datetime.strptime(dobs[i].strip(), "%Y-%m-%d").date()
-                cabjad = abjad_calc(cname)
-                cmoon = moon_phase(cdob)
-                st.write(f"👧 {cname} — تولد: {cdob}, فاز ماه: {cmoon}, ابجد: {cabjad}")
-            except:
-                st.error(f"خطا در پردازش فرزند: {names[i]}")
+                child_date = datetime.strptime(child_dobs[i], "%Y-%m-%d")
+                child_moon = get_moon_phase(child_date)
+                child_val = get_abjad_value(child_names[i])
+                st.write(f"👧 {child_names[i]} | ابجد: {child_val} | قمر: {child_moon}")
+            except ValueError:
+                st.error(f"❗ فرمت تاریخ تولد برای {child_names[i]} اشتباه است.")
