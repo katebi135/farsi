@@ -1,63 +1,87 @@
 import streamlit as st
 import datetime
+import math
 
-st.set_page_config(page_title="تحلیل اَبجد و قمری - نسخه ساده", layout="centered")
-st.title("🔮 تحلیل ابجدی، قمری و فرزندان")
+st.set_page_config(page_title="تحلیل عرفانی جامع", layout="centered")
+st.title("📿 تحلیل ابجدی، سیمیا، فاز ماه و تولد فرزندان")
 
-def calculate_abjad(name):
-    abjad_dict = {
+# ✅ محاسبه ابجد
+def abjad_calc(name):
+    table = {
         'ا': 1, 'ب': 2, 'پ': 2, 'ت': 400, 'ث': 500, 'ج': 3, 'چ': 3, 'ح': 8, 'خ': 600,
         'د': 4, 'ذ': 700, 'ر': 200, 'ز': 7, 'ژ': 7, 'س': 60, 'ش': 300, 'ص': 90, 'ض': 800,
         'ط': 9, 'ظ': 900, 'ع': 70, 'غ': 1000, 'ف': 80, 'ق': 100, 'ک': 20, 'ك': 20,
-        'گ': 20, 'ل': 30, 'م': 40, 'ن': 50, 'و': 6, 'ه': 5, 'ی': 10, 'ئ': 10, 'ي': 10,
-        'ء': 0, ' ': 0, '.': 0
+        'گ': 20, 'ل': 30, 'م': 40, 'ن': 50, 'و': 6, 'ه': 5, 'ی': 10, 'ي': 10, 'ئ': 10,
+        'ء': 0, ' ': 0, 'أ': 1, 'إ': 1, 'آ': 1, 'ة': 5
     }
-    return sum(abjad_dict.get(ch, 0) for ch in name.strip())
+    return sum(table.get(ch, 0) for ch in name.strip())
 
-def get_moon_phase(date):
-    synodic_month = 29.53
-    new_moon = datetime.date(2000, 1, 6)
-    delta_days = (date - new_moon).days % synodic_month
-    phase = int((delta_days / synodic_month) * 8) % 8
-    phases = ["🌑 محاق", "🌒 هلال اول", "🌓 تربیع اول", "🌔 بدر ناقص", "🌕 بدر کامل", 
-              "🌖 بدر کاهنده", "🌗 تربیع دوم", "🌘 هلال آخر"]
-    return phases[phase]
+# ✅ فاز ماه و تاریخ قمری
+def moon_phase_and_hijri(date):
+    ref = datetime.date(2000, 1, 6)
+    days = (date - ref).days
+    synodic = 29.53058867
+    phase_day = days % synodic
+    moon_index = int((phase_day / synodic) * 8) % 8
+    phases = [
+        "🌑 محاق", "🌒 هلال اول", "🌓 تربیع اول", "🌔 نیمه پر",
+        "🌕 بدر کامل", "🌖 کاهنده", "🌗 تربیع دوم", "🌘 پایان ماه"
+    ]
+    hijri_day = (days % 354) % 30 + 1
+    hijri_month = ((days % 354) // 30) + 1
+    return phases[moon_index], f"{hijri_day} / {hijri_month}"
 
+# ✅ تحلیل سیمیا ساده
+def simiya_analysis(abjad_val):
+    if abjad_val < 500:
+        return "🌱 طبع خاک: شخصیت آرام و واقع‌گرا"
+    elif abjad_val < 1000:
+        return "🔥 طبع آتش: پرشور و پرحرارت"
+    elif abjad_val < 1500:
+        return "🌊 طبع آب: احساسی، لطیف، اسرارآمیز"
+    else:
+        return "🌪 طبع هوا: ذهنی، بلندپرواز، تجزیه‌گر"
+
+# ✅ فرم اصلی
 with st.form("form"):
-    name = st.text_input("نام کامل شما")
-    mother = st.text_input("نام مادر شما")
-    birth_date = st.date_input("تاریخ تولد شما", datetime.date(1990,1,1),
+    name = st.text_input("🧍 نام کامل")
+    mother = st.text_input("👩‍👧‍👦 نام مادر")
+    birth_date = st.date_input("📅 تاریخ تولد", datetime.date(1980,1,1),
                                min_value=datetime.date(1900,1,1), max_value=datetime.date(2100,1,1))
-    
-    father_birth = st.date_input("تاریخ تولد پدر", datetime.date(1960,1,1),
-                                 min_value=datetime.date(1900,1,1), max_value=datetime.date(2100,1,1))
-    mother_birth = st.date_input("تاریخ تولد مادر", datetime.date(1965,1,1),
-                                 min_value=datetime.date(1900,1,1), max_value=datetime.date(2100,1,1))
-    
-    child_names = st.text_area("نام فرزندان (هر نام در یک خط)")
-    child_dobs = st.text_area("تاریخ تولد فرزندان (مطابق ترتیب بالا، فرمت YYYY-MM-DD)")
-    
+    father_birth = st.date_input("📅 تاریخ تولد پدر", datetime.date(1955,1,1))
+    mother_birth = st.date_input("📅 تاریخ تولد مادر", datetime.date(1960,1,1))
+    child_names = st.text_area("👶 نام فرزندان (هر خط یک نام)")
+    child_dobs = st.text_area("📅 تاریخ تولد فرزندان (YYYY-MM-DD به ترتیب بالا)")
+
     submit = st.form_submit_button("🔍 تحلیل کن")
 
+# ✅ پس از ارسال
 if submit:
     if not name or not mother:
-        st.error("❌ لطفاً نام کامل و نام مادر را وارد کنید.")
+        st.error("⚠️ لطفا نام و نام مادر را وارد کنید.")
     else:
-        abjad_value = calculate_abjad(name) + calculate_abjad(mother)
-        st.subheader("📜 نتایج تحلیل")
-        st.write(f"ارزش ابجدی نام شما و مادرتان: {abjad_value}")
-        st.write(f"فاز ماه هنگام تولد شما: {get_moon_phase(birth_date)}")
+        abjad_sum = abjad_calc(name) + abjad_calc(mother)
+        moon, hijri = moon_phase_and_hijri(birth_date)
+        simiya = simiya_analysis(abjad_sum)
 
+        st.subheader("📜 نتیجه نهایی:")
+        st.markdown(f"🔢 **ارزش ابجدی:** {abjad_sum}")
+        st.markdown(f"🌙 **فاز ماه تولد:** {moon}")
+        st.markdown(f"🗓 **تاریخ تقریبی قمری:** {hijri}")
+        st.markdown(f"🧠 **تحلیل سیمیا:** {simiya}")
+
+        # 👶 تحلیل فرزندان
         if child_names.strip() and child_dobs.strip():
-            names = [n.strip() for n in child_names.splitlines()]
-            dobs = [d.strip() for d in child_dobs.splitlines()]
+            names = child_names.splitlines()
+            dobs = child_dobs.splitlines()
             if len(names) != len(dobs):
-                st.warning("⚠️ تعداد نام‌ها و تاریخ‌ها با هم تطابق ندارند.")
+                st.warning("⚠️ تعداد نام‌ها با تاریخ‌ها برابر نیست.")
             else:
+                st.markdown("👶 **فرزندان:**")
                 for i in range(len(names)):
                     try:
                         dob = datetime.date.fromisoformat(dobs[i])
-                        moon = get_moon_phase(dob)
-                        st.write(f"👶 {names[i]} – فاز ماه هنگام تولد: {moon}")
-                    except ValueError:
-                        st.error(f"❌ تاریخ '{dobs[i]}' برای فرزند '{names[i]}' معتبر نیست.")
+                        m, h = moon_phase_and_hijri(dob)
+                        st.write(f"{names[i]} – {m} | قمری: {h}")
+                    except:
+                        st.error(f"❌ خطا در تاریخ {dobs[i]} برای {names[i]}")
